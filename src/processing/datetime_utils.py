@@ -1,6 +1,7 @@
 import pandas as pd
 
 def add_datetime_columns(df, start_year = 2026):
+    df = df.copy()
     dates = df['date'].to_list()
 
     parsedDates = []
