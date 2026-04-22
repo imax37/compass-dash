@@ -30,3 +30,10 @@ def GetAddFareTrips(df):
     add_fare = df.loc[df['origin'] == 'YVR']
 
     return add_fare
+
+def count_trip_types(trips):
+    return{
+        "one_zone": GetOneZoneTrips(trips).shape[0],
+        "two_zone": GetTwoZoneTrips(trips).shape[0],
+        "add_fare": GetAddFareTrips(trips).shape[0]
+    }
