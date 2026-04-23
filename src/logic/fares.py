@@ -1,21 +1,23 @@
-def cost_stored_value(counts: dict, fares: dict) -> float:
+from dataclasses import dataclass
+
+def cost_stored_value(counts: dict, FARES: dataclass) -> float:
     return (
-        counts["one_zone"] * fares["1zone"] +
-        counts["two_zone"] * fares["2zone"] +
-        counts["add_fare"] * fares["yvraddfare"]
+        counts["one_zone"] * FARES.one_zone +
+        counts["two_zone"] * FARES.two_zone +
+        counts["add_fare"] * FARES.yvr_add
     )
 
 
-def cost_one_zone_pass(counts: dict, fares: dict) -> float:
+def cost_one_zone_pass(counts: dict, FARES: dataclass) -> float:
     return (
-        fares["1zonemonth"] +
-        counts["two_zone"] * fares["2zoneaddfare"]
+        FARES.one_zone_month +
+        counts["two_zone"] * FARES.two_zone_add
     )
 
 
-def cost_two_zone_pass(counts: dict, fares: dict) -> float:
-    return fares["2zonemonth"]
+def cost_two_zone_pass(counts: dict, FARES: dataclass) -> float:
+    return FARES.two_zone_month
 
-PAYMENT_METHODS = {"One Zone": cost_one_zone_pass,
-                    "Two Zone": cost_two_zone_pass,
+PAYMENT_METHODS = {"One Zone Pass": cost_one_zone_pass,
+                    "Two Zone Pass": cost_two_zone_pass,
                      "Stored Value": cost_stored_value}
