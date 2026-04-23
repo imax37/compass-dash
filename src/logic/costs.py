@@ -1,5 +1,6 @@
 from .trips import ShiftsToTrips, count_trip_types
 from .fares import PAYMENT_METHODS
+import pandas as pd
 
 def total_costs(shifts, fares):
 
