@@ -41,21 +41,21 @@ def load_sample_data():
 def load_shifts(file):
     return run_pipeline(file, start_year=2026)
 
-if uploaded_file:
+if demo:
+    st.warning("Using Sample Data")
+    shift_df = load_sample_data()
+
+elif uploaded_file:
     try:
         shift_df = load_shifts(uploaded_file)
     except Exception as e:
         st.error(f"Failed to parse PDF: {e}")
 
-elif demo:
-    st.warning("Using Sample Data")
-    shift_df = load_sample_data()
-
 else:
     st.info("Upload a PDF to begin")
     st.stop()
     
-
+st.subheader(f"Your Shifts for {month}")
 st.dataframe(shift_df[["date","type","start_time","end_time"]])
 
 # --- Cost Logic ---
@@ -76,7 +76,6 @@ trips = results['trips']
 # --- OUTPUTS ---
 st.subheader("Cost Comparison")
 best = costs_df['cost'].idxmin()
-st.success(f"best option: {best}")
 
 col1, col2 = st.columns(2)
 
@@ -85,13 +84,13 @@ with col1:
     st.caption("Inclodes YVR addfare and zone-based pricing")
 
 with col2:
-    st.metric("Best Option", best)
+    st.metric("Cheapest option", best)
     st.metric("Cost", f"${costs_df.loc[best, 'cost']:.2f}")
 
     baseline = costs_df["cost"].min()
     costs_df['Savings'] = costs_df["cost"] - baseline
     st.subheader("Savings vs best option")
-    st.dataframe(costs_df.style.format({'cost':"${:.2f}", 'Savings':"${:.2f}"}))
+    st.dataframe(costs_df.style.format({'cost':"${:.2f}",'Savings':"${:.2f}"}))
 
 st.download_button(
     "Download Results",
@@ -99,10 +98,36 @@ st.download_button(
     file_name="commute_costs.csv"   
 )
 
+st.success(f"best option: {best}")
+
+# --- PASS BENEFIT LOGIC ---
+
+st.subheader('Pass Benefit Comparison')
+
+col1, col2 = st.columns(2)
+
+if best == 'Two Zone Pass':
+    st.success('Upgraded compass product is already your cheapest option!')
+
+else:
+
+    free_bus_trips = abs(costs_df['cost'].loc['One Zone Pass'] - costs_df['cost'].loc['Stored Value']) // FARES.one_zone
+
+    if best == 'One Zone Pass':
+        col1.metric('Stored Value -> One Zone Pass', f'{round(free_bus_trips, ndigits=None)} trips')
+        col1.caption('Equivalent bus fares that you save with your one zone pass')
+
+    else:
+        col1.metric('One zone pass', f'{round(free_bus_trips, ndigits=None)} trips')
+        col1.caption('Extra bus trips included if you use a one zone pass instead of stored value')
+
+    free_2_zone_trips = abs(costs_df['cost'].loc['Two Zone Pass'] - costs_df['cost'].loc['One Zone Pass']) // FARES.two_zone_add
+    col2.metric('One Zone -> Two Zone Pass', f'{round(free_2_zone_trips, ndigits=None)} trips')
+    col2.caption('Extra two-zone trips included if you use a two zone instead of one zone pass')
 
 # --- TRIP BREAKDOWN ---
 
-st.subheader("📊 Trip Breakdown")
+st.subheader("Trip Type Breakdown")
 
 col1, col2, col3 = st.columns(3)
 col1.metric("1-Zone Trips", counts["one_zone"])
