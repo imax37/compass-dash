@@ -1,7 +1,7 @@
 import pandas as pd
 from src.parser.orchestrator import parse_pdf
 from src.processing.cleaning import clean_dataframe
-from src.processing.datetime_utils import add_datetime_columns
+from src.processing.datetime_utils import add_datetime_columns, parse_times
 from src.processing.features import add_features
 
 def run_pipeline(pdf_path, start_year):
@@ -10,6 +10,7 @@ def run_pipeline(pdf_path, start_year):
     df = pd.DataFrame(raw_data)
     df = clean_dataframe(df)
     df = add_datetime_columns(df, start_year)
+    df = parse_times(df)
     df = add_features(df)
 
     return df
