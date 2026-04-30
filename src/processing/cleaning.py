@@ -20,7 +20,7 @@ def split_time_column(df):
     times = df['time'].str.split('-', expand=True)
     df['start_time'] = times[0]
     df['end_time'] = times[1]
-    df = df.drop(columns=['time'])
+    #df = df.drop(columns=['time'])
 
     return df
 
