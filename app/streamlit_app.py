@@ -5,6 +5,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 import streamlit as st
 import pandas as pd
 from src.parser.orchestrator import parse_pdf
+from src.processing.datetime_utils import add_datetime_columns, parse_times
 from src.pipeline import run_pipeline
 from src.logic.costs import total_costs
 from src.config.fare_prices import FARES
@@ -21,22 +22,25 @@ st.sidebar.header("Input")
 uploaded_files = st.sidebar.file_uploader('Upload a Schedule PDFs',
                                          accept_multiple_files=True)
 demo = st.sidebar.checkbox("Use sample data")
-st.sidebar.warning("The following controls are inactive")
 buffer = st.sidebar.slider("Commute time (minutes)", 30, 120, 60)
-month = st.sidebar.selectbox("Month",("February", "March", "April"),
+month = st.sidebar.selectbox("Month",("February", "March", "April", "May", "June"),
                               placeholder="Select a month to compare")
 year = st.sidebar.selectbox('Start year', (2026, 2025))
 st.sidebar.caption('Select the year your schedule starts in')
 
 def load_sample_data():
-    return pd.DataFrame({
+    raw =  pd.DataFrame({
         "date": pd.date_range("2026-03-01", periods=5, freq="D"),
         "type": ["AGT1"] * 5,
-        "start_time": [1445, 1445, 1445, 1445, 1445],
-        "end_time": [1845, 1845, 1845, 1845, 1845],
+        "start_time": ['1445', '1945', '1445', '1445', '1445'],
+        "end_time": ['1845', '2345', '1845', '1845', '1845'],
         "month": ["March"] * 5,
         "is_weekend": [True, False, False, False, False]
     })
+
+    df = parse_times(raw)
+    
+    return df
 
 # --- ETL AND DISPLAY ---
 
@@ -88,11 +92,11 @@ st.dataframe(shift_df[["date","type","start_time","end_time"]])
 # --- Cost Logic ---
 
 @st.cache_data
-def compute_costs(df):
-    return total_costs(df, FARES)
+def compute_costs(df, buffer):
+    return total_costs(df, FARES, buffer)
 
 try:
-    results = compute_costs(shift_df)
+    results = compute_costs(shift_df, buffer)
 except Exception as e:
     st.error(f"Cost calculations failed: {e}")
     st.stop()
