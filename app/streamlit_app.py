@@ -18,12 +18,15 @@ st.write("Compare compass card expenses based on your work schedule")
 
 st.sidebar.header("Input")
 
-uploaded_file = st.sidebar.file_uploader('Upload a Schedule PDF')
+uploaded_files = st.sidebar.file_uploader('Upload a Schedule PDFs',
+                                         accept_multiple_files=True)
 demo = st.sidebar.checkbox("Use sample data")
 st.sidebar.warning("The following controls are inactive")
 buffer = st.sidebar.slider("Commute time (minutes)", 30, 120, 60)
-month = st.sidebar.selectbox("Month",("February", "March", "April"), placeholder="Select a month to compare")
-
+month = st.sidebar.selectbox("Month",("February", "March", "April"),
+                              placeholder="Select a month to compare")
+year = st.sidebar.selectbox('Start year', (2026, 2025))
+st.sidebar.caption('Select the year your schedule starts in')
 
 def load_sample_data():
     return pd.DataFrame({
@@ -38,8 +41,17 @@ def load_sample_data():
 # --- ETL AND DISPLAY ---
 
 @st.cache_data
-def load_shifts(file):
-    return run_pipeline(file, start_year=2026)
+def load_schedules(files):
+    dfs = []
+    for file in files:
+        df = run_pipeline(file, start_year=year)
+        dfs.append(df)
+
+    combined = pd.concat(dfs, ignore_index=True)
+
+    combined = combined.drop_duplicates(subset=['date','start_time','end_time'])
+
+    return combined
 
 def filter_month(df, month_name):
     return df[df["month"] == month_name]
@@ -48,12 +60,12 @@ if demo:
     st.warning("Using Sample Data")
     shift_df = load_sample_data()
 
-elif uploaded_file:
+elif uploaded_files:
     if not month:
         st.warning('Please select a month')
         st.stop()
     try:
-        shift_df_unfiltered = load_shifts(uploaded_file)
+        shift_df_unfiltered = load_schedules(uploaded_files)
     except Exception as e:
         st.error(f"Failed to parse PDF: {e}")
         st.stop()
