@@ -41,20 +41,35 @@ def load_sample_data():
 def load_shifts(file):
     return run_pipeline(file, start_year=2026)
 
+def filter_month(df, month_name):
+    return df[df["month"] == month_name]
+
 if demo:
     st.warning("Using Sample Data")
     shift_df = load_sample_data()
 
 elif uploaded_file:
+    if not month:
+        st.warning('Please select a month')
+        st.stop()
     try:
-        shift_df = load_shifts(uploaded_file)
+        shift_df_unfiltered = load_shifts(uploaded_file)
     except Exception as e:
         st.error(f"Failed to parse PDF: {e}")
+        st.stop()
+
+    assert month in shift_df_unfiltered['month'].values, f"{month} not found in your schedule!"
+
+    try:
+        shift_df = filter_month(shift_df_unfiltered, month)
+    except Exception as e:
+        st.error(f"Failed to filter for month {month}: {e}")
+        st.stop()
 
 else:
     st.info("Upload a PDF to begin")
     st.stop()
-    
+
 st.subheader(f"Your Shifts for {month}")
 st.dataframe(shift_df[["date","type","start_time","end_time"]])
 
@@ -68,6 +83,7 @@ try:
     results = compute_costs(shift_df)
 except Exception as e:
     st.error(f"Cost calculations failed: {e}")
+    st.stop()
 
 costs_df = results['costs']
 counts = results['counts']
