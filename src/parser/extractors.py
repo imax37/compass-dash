@@ -45,17 +45,20 @@ def find_employee_rows(words, first="Ian", last="Maccarthy", y_tol=20, x_tol=20)
         "shiftTypeRow": lastName['top']
     }
 
-SHIFT_PATTERN = re.compile(r"\d{4}-\d{4}")
+# SHIFT_PATTERN = re.compile(r"\d{4}-\d{4}")
+SHIFT_PATTERN = re.compile(r"(\d{4}-\d{4})")
 
-def get_employee_shifts(words, employee_y, tolerance=20):
+def get_employee_shifts(words, employee_y, tolerance=8):
     shifts = []
 
     for w in words:
-        if SHIFT_PATTERN.match(w['text']):
-
-            if abs(w['top'] - employee_y) < tolerance:
+        if abs(w['top'] - employee_y) < tolerance:
+            # if SHIFT_PATTERN.match(w['text']):
+            match = SHIFT_PATTERN.search(w['text'])
+            if match:
+                #shifts.append({'x':w['x0'], 'time':match.group(1), 'raw': w['text']})
                 shifts.append(w)
-
+    print(shifts[:2])
     return shifts
 
 def match_shift_types(shifts, words, shift_type_y, y_tol=20, x_tol=20):
@@ -64,19 +67,25 @@ def match_shift_types(shifts, words, shift_type_y, y_tol=20, x_tol=20):
     for shift in shifts:
         x = shift['x0']
 
+        print("SHIFT TYPE ROW TARGET:", shift_type_y)
+    
+        # --- Old format separate line ---
         for w in words:
+            if abs(w['x0'] - x) < 5:  # very tight x match
+                print(f"Candidate near x={x}: text={w['text']}, top={w['top']}")
             if (
                 abs(w['top'] - shift_type_y) < y_tol and 
-                abs(w['x0'] - x) < x_tol and
-                not SHIFT_PATTERN.match(w['text'])
+                abs(w['x0'] - x) < x_tol 
+                and not SHIFT_PATTERN.search(w['text'])
             ):
                 results.append({
                     'x': x,
-                    'time': shift['text'],
+                    'time': shift['time'],
                     'type': w['text']
                 })
                 break
 
+    print(f'results have length {len(results)}')
     return results
 
 def assign_dates(shifts, date_columns):
