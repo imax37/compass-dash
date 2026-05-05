@@ -91,7 +91,7 @@ else:
     st.info("Upload a PDF to begin")
     st.stop()
 
-st.subheader(f"Your Shifts for {month}")
+st.subheader(f"{month} Shifts for {first.capitalize()} {last.capitalize()}")
 st.dataframe(shift_df[["date","type","start_time","end_time"]].style.format({'date':"{:%Y-%B-%d}",
                                                                              'start_time':"{:%H:%M}",
                                                                              "end_time":"{:%H:%M}"}))
