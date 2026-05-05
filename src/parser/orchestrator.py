@@ -7,13 +7,13 @@ from .extractors import(
     assign_dates
 )
 
-def parse_pdf(pdf_path):
+def parse_pdf(pdf_path, first_name, last_name):
     all_results = []
 
     for words in extract_words_from_pdf(pdf_path):
 
         date_columns = get_date_columns(words)
-        employee_rows = find_employee_rows(words)
+        employee_rows = find_employee_rows(words, first_name, last_name)
 
         shifts = get_employee_shifts(
             words, employee_rows['row_min'], employee_rows['row_max']

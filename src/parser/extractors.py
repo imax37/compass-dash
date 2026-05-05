@@ -16,12 +16,15 @@ def get_date_columns(words):
 
     return date_columns
 
-def find_employee_rows(words, first="Ian", last="Maccarthy", y_tol=20, x_tol=20):
+def find_employee_rows(words, first="Ian", last="Maccarthy", y_tol=20, x_tol=50):
+    first=first.lower()
+    last=last.lower()
+    
     firstName = None
     lastName = None
 
     for w in words:
-        if w['text'] == first:
+        if w['text'].lower() == first:
             firstName = w
             break
 
@@ -30,9 +33,9 @@ def find_employee_rows(words, first="Ian", last="Maccarthy", y_tol=20, x_tol=20)
     
     for w in words:
         if (
-            w['text'] == last
+            w['text'].lower() == last
             and abs(w['x0'] - firstName['x0']) < x_tol
-            and w['top'] > firstName['top']
+            #and w['top'] > firstName['top']
             and abs(w['top'] - firstName['top']) < y_tol
         ):
             lastName = w
