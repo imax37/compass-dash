@@ -16,10 +16,10 @@ def parse_pdf(pdf_path):
         employee_rows = find_employee_rows(words)
 
         shifts = get_employee_shifts(
-            words, employee_rows['shiftTimeRow']
+            words, employee_rows['row_min'], employee_rows['row_max']
             )
         shifts_w_type = match_shift_types(
-            shifts, words, employee_rows['shiftTypeRow']
+            shifts, words, employee_rows['row_min'], employee_rows['row_max']
             )
         results = assign_dates(shifts_w_type, date_columns)
 
