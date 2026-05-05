@@ -27,7 +27,7 @@ def find_employee_rows(words, first="Ian", last="Maccarthy", y_tol=20, x_tol=50)
             row_top = w['top']
             break
 
-    if not row_top:
+    if row_top is None:
         raise ValueError("First name not found")
     
     row_words = [x for x in words if abs(x['top'] - row_top) < y_tol]
@@ -59,7 +59,7 @@ def get_employee_shifts(words, row_bottom, row_top, tolerance=5):
     
     return shifts
 
-def match_shift_types(shifts, words, row_bottom, row_top, last_name, y_tol=5, x_tol=40):
+def match_shift_types(shifts, words, row_bottom, row_top, last_name, y_tol=5, x_tol=60):
     results = []
     row_min = min(row_top, row_bottom) - y_tol
     row_max = max(row_top, row_bottom) + y_tol
@@ -68,10 +68,15 @@ def match_shift_types(shifts, words, row_bottom, row_top, last_name, y_tol=5, x_
         x = shift['x0']
 
         for w in words:
-            if (
-                w['text'].lower() != last_name.lower() and 
+            dx = w['x0'] - x
+            if dx <= 0:
+                continue
+            if dx > x_tol:
+                continue
+            elif (
+                #w['text'].lower() != last_name.lower() and 
                 row_min <= w['top'] <= row_max and 
-                abs(w['x0'] - x) < x_tol and
+                #abs(w['x0'] - x) < x_tol and
                 not SHIFT_PATTERN.search(w['text'])
             ):
                 results.append({
