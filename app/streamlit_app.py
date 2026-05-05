@@ -19,14 +19,15 @@ st.write("Compare compass card expenses based on your work schedule")
 
 st.sidebar.header("Input")
 
-uploaded_files = st.sidebar.file_uploader('Upload a Schedule PDFs',
-                                         accept_multiple_files=True)
 demo = st.sidebar.checkbox("Use sample data")
-buffer = st.sidebar.slider("Commute time (minutes)", 30, 120, 60)
-month = st.sidebar.selectbox("Month",("February", "March", "April", "May", "June"),
-                              placeholder="Select a month to compare")
-year = st.sidebar.selectbox('Start year', (2026, 2025))
-st.sidebar.caption('Select the year your schedule starts in')
+uploaded_files = st.sidebar.file_uploader('Upload one or more schedule PDFs',
+                                         accept_multiple_files=True)
+month = st.sidebar.selectbox('Select the month you would like to filter',
+                             ("January", "February", "March", "April", "May", "June", "July",
+                                "August", "September", "October", "November", "December"))
+year = st.sidebar.selectbox('Select the year your schedule starts in', (2026, 2025))
+buffer = st.sidebar.slider('Adjust your commute time (minutes)', 30, 120, 60)
+
 
 def load_sample_data():
     raw =  pd.DataFrame({
