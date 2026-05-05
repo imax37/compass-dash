@@ -19,14 +19,19 @@ st.write("Compare compass card expenses based on your work schedule")
 
 st.sidebar.header("Input")
 
-uploaded_files = st.sidebar.file_uploader('Upload a Schedule PDFs',
-                                         accept_multiple_files=True)
 demo = st.sidebar.checkbox("Use sample data")
-buffer = st.sidebar.slider("Commute time (minutes)", 30, 120, 60)
-month = st.sidebar.selectbox("Month",("February", "March", "April", "May", "June"),
-                              placeholder="Select a month to compare")
-year = st.sidebar.selectbox('Start year', (2026, 2025))
-st.sidebar.caption('Select the year your schedule starts in')
+first = st.sidebar.text_input('Your first name', value='Ian')
+last = st.sidebar.text_input('Your last name', value='Maccarthy')
+#first = 'Satomi'
+#last= 'Harward'
+uploaded_files = st.sidebar.file_uploader('Upload one or more schedule PDFs',
+                                         accept_multiple_files=True)
+month = st.sidebar.selectbox('Select the month you would like to filter',
+                             ("January", "February", "March", "April", "May", "June", "July",
+                                "August", "September", "October", "November", "December"))
+current_year = st.sidebar.selectbox('Select the year your schedule starts in', (2026, 2025))
+buffer = st.sidebar.slider('Adjust your commute time (minutes)', 30, 120, 60)
+
 
 def load_sample_data():
     raw =  pd.DataFrame({
@@ -45,10 +50,10 @@ def load_sample_data():
 # --- ETL AND DISPLAY ---
 
 @st.cache_data
-def load_schedules(files):
+def load_schedules(files, year, first_name, last_name):
     dfs = []
     for file in files:
-        df = run_pipeline(file, start_year=year)
+        df = run_pipeline(file, year, first_name, last_name)
         dfs.append(df)
 
     combined = pd.concat(dfs, ignore_index=True)
@@ -69,7 +74,7 @@ elif uploaded_files:
         st.warning('Please select a month')
         st.stop()
     try:
-        shift_df_unfiltered = load_schedules(uploaded_files)
+        shift_df_unfiltered = load_schedules(uploaded_files, current_year, first, last)
     except Exception as e:
         st.error(f"Failed to parse PDF: {e}")
         st.stop()
@@ -86,8 +91,10 @@ else:
     st.info("Upload a PDF to begin")
     st.stop()
 
-st.subheader(f"Your Shifts for {month}")
-st.dataframe(shift_df[["date","type","start_time","end_time"]])
+st.subheader(f"{month} Shifts for {first.capitalize()} {last.capitalize()}")
+st.dataframe(shift_df[["date","type","start_time","end_time"]].style.format({'date':"{:%Y-%B-%d}",
+                                                                             'start_time':"{:%H:%M}",
+                                                                             "end_time":"{:%H:%M}"}))
 
 # --- Cost Logic ---
 

@@ -16,35 +16,31 @@ def get_date_columns(words):
 
     return date_columns
 
-def find_employee_rows(words, first="Ian", last="Maccarthy", y_tol=20, x_tol=20):
-    firstName = None
-    lastName = None
+def find_employee_rows(words, first="Ian", last="Maccarthy", y_tol=20, x_tol=50):
+    first=first.lower()
+    last=last.lower()
+
+    row_top = None
 
     for w in words:
-        if w['text'] == first:
-            firstName = w
+        if w['text'].lower() == first:
+            row_top = w['top']
             break
 
-    if not firstName:
+    if row_top is None:
         raise ValueError("First name not found")
     
-    for w in words:
-        if (
-            w['text'] == last
-            and abs(w['x0'] - firstName['x0']) < x_tol
-            and w['top'] > firstName['top']
-            and abs(w['top'] - firstName['top']) < y_tol
-        ):
-            lastName = w
-            break
-    if not lastName:
-        raise ValueError("last name not found")
-    
-    return{
-        "row_min": firstName['top'],
-        "row_max": lastName['top']
-    }
+    row_words = [x for x in words if abs(x['top'] - row_top) < y_tol]
 
+    for x in row_words:
+        if x['text'].lower() == last:
+
+            return{
+                "row_min": row_top,
+                "row_max": x['top']
+            }
+
+    raise ValueError("last name not found")
 
 SHIFT_PATTERN = re.compile(r"(\d{4}-\d{4})")
 
@@ -63,7 +59,7 @@ def get_employee_shifts(words, row_bottom, row_top, tolerance=5):
     
     return shifts
 
-def match_shift_types(shifts, words, row_bottom, row_top, y_tol=5, x_tol=50):
+def match_shift_types(shifts, words, row_bottom, row_top, last_name, y_tol=5, x_tol=60):
     results = []
     row_min = min(row_top, row_bottom) - y_tol
     row_max = max(row_top, row_bottom) + y_tol
@@ -72,9 +68,15 @@ def match_shift_types(shifts, words, row_bottom, row_top, y_tol=5, x_tol=50):
         x = shift['x0']
 
         for w in words:
-            if (
+            dx = w['x0'] - x
+            if dx <= 0:
+                continue
+            if dx > x_tol:
+                continue
+            elif (
+                #w['text'].lower() != last_name.lower() and 
                 row_min <= w['top'] <= row_max and 
-                abs(w['x0'] - x) < x_tol and
+                #abs(w['x0'] - x) < x_tol and
                 not SHIFT_PATTERN.search(w['text'])
             ):
                 results.append({
