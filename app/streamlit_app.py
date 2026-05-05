@@ -87,7 +87,9 @@ else:
     st.stop()
 
 st.subheader(f"Your Shifts for {month}")
-st.dataframe(shift_df[["date","type","start_time","end_time"]])
+st.dataframe(shift_df[["date","type","start_time","end_time"]].style.format({'date':"{:%Y-%B-%d}",
+                                                                             'start_time':"{:%H:%M}",
+                                                                             "end_time":"{:%H:%M}"}))
 
 # --- Cost Logic ---
 
