@@ -41,34 +41,41 @@ def find_employee_rows(words, first="Ian", last="Maccarthy", y_tol=20, x_tol=20)
         raise ValueError("last name not found")
     
     return{
-        "shiftTimeRow": firstName['top'],
-        "shiftTypeRow": lastName['top']
+        "row_min": firstName['top'],
+        "row_max": lastName['top']
     }
 
-SHIFT_PATTERN = re.compile(r"\d{4}-\d{4}")
 
-def get_employee_shifts(words, employee_y, tolerance=20):
+SHIFT_PATTERN = re.compile(r"(\d{4}-\d{4})")
+
+def get_employee_shifts(words, row_bottom, row_top, tolerance=5):
     shifts = []
+    row_min = min(row_top, row_bottom) - tolerance
+    row_max = max(row_top, row_bottom) + tolerance
 
     for w in words:
-        if SHIFT_PATTERN.match(w['text']):
+        
+        if row_min <= w['top'] <= row_max:
 
-            if abs(w['top'] - employee_y) < tolerance:
+            match = SHIFT_PATTERN.search(w['text'])
+            if match:
                 shifts.append(w)
-
+    
     return shifts
 
-def match_shift_types(shifts, words, shift_type_y, y_tol=20, x_tol=20):
+def match_shift_types(shifts, words, row_bottom, row_top, y_tol=5, x_tol=50):
     results = []
+    row_min = min(row_top, row_bottom) - y_tol
+    row_max = max(row_top, row_bottom) + y_tol
 
     for shift in shifts:
         x = shift['x0']
 
         for w in words:
             if (
-                abs(w['top'] - shift_type_y) < y_tol and 
+                row_min <= w['top'] <= row_max and 
                 abs(w['x0'] - x) < x_tol and
-                not SHIFT_PATTERN.match(w['text'])
+                not SHIFT_PATTERN.search(w['text'])
             ):
                 results.append({
                     'x': x,
