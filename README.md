@@ -43,7 +43,7 @@ The app then:
 
 The interactive dashboard is deployed as an app using Streamlit Cloud. You can access it with the following link:
 
-[Streamlit Dashboard](https://compass-dash.streamlit.app/)
+[Streamlit Dashboard](https://compass-dashboard.streamlit.app/)
 
 ## 🏗️ Project Structure
 
