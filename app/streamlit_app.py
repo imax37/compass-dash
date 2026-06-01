@@ -20,17 +20,28 @@ st.write("Compare compass card expenses based on your work schedule")
 st.sidebar.header("Input")
 
 demo = st.sidebar.checkbox("Use sample data")
-first = st.sidebar.text_input('Your first name', value='Ian')
-last = st.sidebar.text_input('Your last name', value='Maccarthy')
 
 uploaded_files = st.sidebar.file_uploader('Upload one or more schedule PDFs',
                                          accept_multiple_files=True)
-month = st.sidebar.selectbox('Select the month you would like to filter',
+
+if not uploaded_files and not demo:
+    st.sidebar.info('Upload a PDF to display input options')
+
+if uploaded_files:
+    first = st.sidebar.text_input('Your first name', value='Ian')
+    last = st.sidebar.text_input('Your last name', value='Maccarthy')
+    month = st.sidebar.selectbox('Select the month you would like to filter',
                              ("January", "February", "March", "April", "May", "June", "July",
                                 "August", "September", "October", "November", "December"))
-current_year = st.sidebar.selectbox('Select the year your schedule starts in', (2026, 2025))
-buffer = st.sidebar.slider('Adjust your commute time (minutes)', 30, 120, 60)
+    current_year = st.sidebar.selectbox('Select the year your schedule starts in', (2026, 2025))
+    buffer = st.sidebar.slider('Adjust your commute time (minutes)', 30, 120, 60)
 
+if demo:
+    first = 'Ian'
+    last = 'MacCarthy'
+    month = 'March'
+    current_year = 2026
+    buffer = 60
 
 def load_sample_data():
     raw =  pd.DataFrame({
@@ -73,21 +84,28 @@ elif uploaded_files:
         st.warning('Please select a month')
         st.stop()
     try:
-        shift_df_unfiltered = load_schedules(uploaded_files, current_year, first, last)
+        with st.spinner("Processing schedules..."):
+            raw_shifts = load_schedules(uploaded_files, current_year, first, last)
     except Exception as e:
         st.error(f"Failed to parse PDF: {e}")
         st.stop()
 
-    assert month in shift_df_unfiltered['month'].values, f"{month} not found in your schedule!"
+    if month not in raw_shifts['month'].values:
+        st.error(f"{month} not found in your schedule")
+        st.stop()
 
     try:
-        shift_df = filter_month(shift_df_unfiltered, month)
+        shift_df = filter_month(raw_shifts, month)
     except Exception as e:
         st.error(f"Failed to filter for month {month}: {e}")
         st.stop()
 
+    if shift_df.empty:
+        st.error("No shifts found — check name or PDF format")
+        st.stop()
+
 else:
-    st.info("Upload a PDF to begin")
+    st.info("Upload a PDF to begin, or select sample data")
     st.stop()
 
 st.subheader(f"{month} Shifts for {first.capitalize()} {last.capitalize()}")
@@ -118,7 +136,7 @@ best = costs_df['cost'].idxmin()
 col1, col2 = st.columns(2)
 
 with col1:
-    st.bar_chart(costs_df.sort_values("cost"))
+    st.bar_chart(costs_df.sort_values("cost")['cost'])
     st.caption("Inclodes YVR addfare and zone-based pricing.")
     st.caption("Single tickets are YVR addfare exempt.")
 
@@ -127,9 +145,10 @@ with col2:
     st.metric("Cost", f"${costs_df.loc[best, 'cost']:.2f}")
 
     baseline = costs_df["cost"].min()
-    costs_df['Savings'] = costs_df["cost"] - baseline
+    display_df = costs_df.copy()
+    display_df['Savings'] = display_df["cost"] - baseline
     st.subheader("Savings vs best option")
-    st.dataframe(costs_df.style.format({'cost':"${:.2f}",'Savings':"${:.2f}"}))
+    st.dataframe(display_df.style.format({'cost':"${:.2f}",'Savings':"${:.2f}"}))
 
 st.download_button(
     "Download Results",
@@ -150,6 +169,8 @@ elif best == 'One Zone Pass':
     free_2_zone_trips = abs(costs_df['cost'].loc['Two Zone Pass'] - costs_df['cost'].loc['One Zone Pass']) // FARES.two_zone_add
     st.metric('One zone pass -> Two zone pass', f'{round(free_2_zone_trips, ndigits=None)} trips')
     st.caption('Extra two-zone trips included for free if you use a two zone instead of one zone pass')
+    if free_2_zone_trips < 3:
+        st.success('Recommended upgrade: Two Zone Pass')
 
 else:
     col1, col2 = st.columns(2)
@@ -158,11 +179,15 @@ else:
         free_bus_trips = abs(costs_df['cost'].loc['One Zone Pass'] - costs_df['cost'].loc['Single Tickets']) // FARES.one_zone
         col1.metric('Single Tickets -> One zone pass', f'{round(free_bus_trips, ndigits=None)} trips')
         col1.caption('Extra bus trips included for free if you use a one zone pass instead of single tickets')
+        if free_bus_trips < 7:
+            st.success('Recommended upgrade: One Zone Pass')
 
     if best == 'Stored Value': # I don't think this is possible, but just in case
         free_bus_trips = abs(costs_df['cost'].loc['One Zone Pass'] - costs_df['cost'].loc['Stored Value']) // FARES.one_zone
         col1.metric('Stored Value -> One zone pass', f'{round(free_bus_trips, ndigits=None)} trips')
         col1.caption('Extra bus trips included for free if you use a one zone pass instead of stored value')
+        if free_bus_trips < 9:
+            st.success('Recommended upgrade: One Zone Pass')
 
     free_2_zone_trips = abs(costs_df['cost'].loc['Two Zone Pass'] - costs_df['cost'].loc['One Zone Pass']) // FARES.two_zone_add
     col2.metric('One Zone Pass -> Two Zone Pass', f'{round(free_2_zone_trips, ndigits=None)} trips')
