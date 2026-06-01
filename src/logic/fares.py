@@ -18,6 +18,13 @@ def cost_one_zone_pass(counts: dict, FARES: dataclass) -> float:
 def cost_two_zone_pass(counts: dict, FARES: dataclass) -> float:
     return FARES.two_zone_month
 
+def cost_single_tickets(counts: dict, FARES: dataclass) -> float:
+    return (
+        counts["one_zone"] * FARES.one_zone +
+        counts["two_zone"] * FARES.two_zone 
+    )
+
 PAYMENT_METHODS = {"One Zone Pass": cost_one_zone_pass,
                     "Two Zone Pass": cost_two_zone_pass,
-                     "Stored Value": cost_stored_value}
+                     "Stored Value": cost_stored_value,
+                     "Single Tickets": cost_single_tickets}
