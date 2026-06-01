@@ -22,8 +22,7 @@ st.sidebar.header("Input")
 demo = st.sidebar.checkbox("Use sample data")
 first = st.sidebar.text_input('Your first name', value='Ian')
 last = st.sidebar.text_input('Your last name', value='Maccarthy')
-#first = 'Satomi'
-#last= 'Harward'
+
 uploaded_files = st.sidebar.file_uploader('Upload one or more schedule PDFs',
                                          accept_multiple_files=True)
 month = st.sidebar.selectbox('Select the month you would like to filter',
@@ -120,7 +119,8 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.bar_chart(costs_df.sort_values("cost"))
-    st.caption("Inclodes YVR addfare and zone-based pricing")
+    st.caption("Inclodes YVR addfare and zone-based pricing.")
+    st.caption("Single tickets are YVR addfare exempt.")
 
 with col2:
     st.metric("Cheapest option", best)
@@ -141,28 +141,32 @@ st.success(f"best option: {best}")
 
 # --- PASS BENEFIT LOGIC ---
 
-st.subheader('Pass Benefit Comparison')
-
-col1, col2 = st.columns(2)
+st.subheader('Compass Pass Upgrade Options')
 
 if best == 'Two Zone Pass':
     st.success('Upgraded compass product is already your cheapest option!')
 
+elif best == 'One Zone Pass':
+    free_2_zone_trips = abs(costs_df['cost'].loc['Two Zone Pass'] - costs_df['cost'].loc['One Zone Pass']) // FARES.two_zone_add
+    st.metric('One zone pass -> Two zone pass', f'{round(free_2_zone_trips, ndigits=None)} trips')
+    st.caption('Extra two-zone trips included for free if you use a two zone instead of one zone pass')
+
 else:
+    col1, col2 = st.columns(2)
 
-    free_bus_trips = abs(costs_df['cost'].loc['One Zone Pass'] - costs_df['cost'].loc['Stored Value']) // FARES.one_zone
+    if best == 'Single Tickets':
+        free_bus_trips = abs(costs_df['cost'].loc['One Zone Pass'] - costs_df['cost'].loc['Single Tickets']) // FARES.one_zone
+        col1.metric('Single Tickets -> One zone pass', f'{round(free_bus_trips, ndigits=None)} trips')
+        col1.caption('Extra bus trips included for free if you use a one zone pass instead of single tickets')
 
-    if best == 'One Zone Pass':
-        col1.metric('Stored Value -> One Zone Pass', f'{round(free_bus_trips, ndigits=None)} trips')
-        col1.caption('Equivalent bus fares that you save with your one zone pass')
-
-    else:
-        col1.metric('One zone pass', f'{round(free_bus_trips, ndigits=None)} trips')
-        col1.caption('Extra bus trips included if you use a one zone pass instead of stored value')
+    if best == 'Stored Value': # I don't think this is possible, but just in case
+        free_bus_trips = abs(costs_df['cost'].loc['One Zone Pass'] - costs_df['cost'].loc['Stored Value']) // FARES.one_zone
+        col1.metric('Stored Value -> One zone pass', f'{round(free_bus_trips, ndigits=None)} trips')
+        col1.caption('Extra bus trips included for free if you use a one zone pass instead of stored value')
 
     free_2_zone_trips = abs(costs_df['cost'].loc['Two Zone Pass'] - costs_df['cost'].loc['One Zone Pass']) // FARES.two_zone_add
-    col2.metric('One Zone -> Two Zone Pass', f'{round(free_2_zone_trips, ndigits=None)} trips')
-    col2.caption('Extra two-zone trips included if you use a two zone instead of one zone pass')
+    col2.metric('One Zone Pass -> Two Zone Pass', f'{round(free_2_zone_trips, ndigits=None)} trips')
+    col2.caption('Extra two-zone trips included for free if you use a two zone instead of one zone pass')
 
 # --- TRIP BREAKDOWN ---
 
